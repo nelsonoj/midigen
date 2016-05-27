@@ -1,2 +1,2 @@
 # midigen
-something awesome
+TODO: write this file
