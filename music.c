@@ -174,15 +174,12 @@ void chords (FILE* output, songdata newsong) {
 void writeNotes (track t, int *pitches, int *rhythms, int numEvents, int restChance) {
     int i = 0;
     while (i < numEvents) {
-        if (restChance > 0 && (float)rand()/RAND_MAX > (float)restChance / 100) {
-            t->events[i] = startNote(t, pitches[i/2]);
-            t->events[i+1] = endNote(t, t->events[i],
-                                            rhythms[i/2]);
-        } else {
+        if (restChance > 0 && (float)rand()/RAND_MAX <= (float)restChance / 100) {
             t->events[i] = startRest(t);
-            t->events[i+1] = endNote(t, t->events[i],
-                                            rhythms[i/2]);
+        } else {
+            t->events[i] = startNote(t, pitches[i/2]);
         }
+        t->events[i+1] = endNote(t, t->events[i], rhythms[i/2]);
         i += 2;
     }
     free(pitches);
@@ -250,13 +247,13 @@ int *generateDegrees (int width, int amount, int stepChance) {
 
     int i = 1;
     while (i < amount) {
-        if (stepChance > 0 && (float)rand()/RAND_MAX > (float)stepChance / 100) {
-            degrees[i] = rand() % width;
-        } else {
+        if (stepChance > 0 && (float)rand()/RAND_MAX <= (float)stepChance / 100) {
             degrees[i] = degrees[i-1] + -1 * ((rand()%3) - 1);
             if (degrees[i] < 0) {
                 degrees[i] = 0;
             }
+        } else {
+            degrees[i] = rand() % width;
         }
         i++;
     }

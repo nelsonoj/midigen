@@ -50,7 +50,6 @@ int main (int argc, char *argv[]) {
         demoOne (output);
     } else {
         songdata newsong = getParameters(header, menuWindow, mode);
-
         if (mode == MODE_MONO) {
             singleNoteMelody (output, newsong);
         } else if (mode == MODE_HARM) {

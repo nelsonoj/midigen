@@ -181,8 +181,8 @@ songdata getParameters (WINDOW* header, WINDOW *menuWindow, int mode) {
     newsong->range = getIntWithInput (header,
         "Enter range in octaves: ", 1, MAX_RANGE);
 
-    newsong->harmony = -1;
-    newsong->voices = -1;
+    newsong->harmony = 0;
+    newsong->voices = 0;
     if (mode == MODE_HARM) {
         setHeading (header, "What kind of harmony would you like?");
         char *harmChoices[SCALE_DEFAULT_NOTES] = HARMONY_NAMES;
