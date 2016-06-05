@@ -1,9 +1,17 @@
 //
-//  Event.c
+// Nelson Odins-Jones, z5122504, nelsonoj
 //
+//                    _|        _|  _|
+//    _|_|_|  _|_|          _|_|_|        _|_|_|    _|_|    _|_|_|
+//    _|    _|    _|  _|  _|    _|  _|  _|    _|  _|_|_|_|  _|    _|
+//    _|    _|    _|  _|  _|    _|  _|  _|    _|  _|        _|    _|
+//    _|    _|    _|  _|    _|_|_|  _|    _|_|_|    _|_|_|  _|    _|
+//                                            _|
+//                                          _|_|
 //
-//  Created by Nelson Odins-Jones on 10/05/2016.
+// Event.c: the lowest level of abstraction for my SOMETHING AWESOME
 //
+// Do the nitty gritty byte writing to make a midi file
 //
 
 #include <stdio.h>
@@ -317,6 +325,8 @@ static void printAsByteArray (int number, int size, FILE *file) {
     byteArray = NULL;
 }
 
+// Unit test the static functions
+
 void runSomeTests (void) {
 
     int tempo = 0x7f;
@@ -419,19 +429,4 @@ void runSomeTests (void) {
         // Noteoff event in a track, tempo 128
         assert(durationToTimestamp(trackTwo, trackTwo->events[1]) == 0x8100);
     }
-
-    /*
-     byte *timestamp = hexToByteArray(durationToTimestamp(trackTwo, trackTwo->events[0]), 2);
-     int i = 0;
-     while (i < 2) {
-     printf("%02x ", timestamp[i]);
-     i++;
-     }
-
-
-    printEvent(trackTwo, trackTwo->events[0]);
-
-    printf("\n");
-    printf("All tests passed! You are awesome!\n");
-*/
 }

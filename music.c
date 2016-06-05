@@ -1,9 +1,17 @@
 //
-//  music.c
+// Nelson Odins-Jones, z5122504, nelsonoj
 //
+//                    _|        _|  _|
+//    _|_|_|  _|_|          _|_|_|        _|_|_|    _|_|    _|_|_|
+//    _|    _|    _|  _|  _|    _|  _|  _|    _|  _|_|_|_|  _|    _|
+//    _|    _|    _|  _|  _|    _|  _|  _|    _|  _|        _|    _|
+//    _|    _|    _|  _|    _|_|_|  _|    _|_|_|    _|_|_|  _|    _|
+//                                            _|
+//                                          _|_|
 //
-//  Created by Nelson Odins-Jones on 14/05/2016.
+// music.c: the third level of abstraction for my SOMETHING AWESOME
 //
+// Use the Event functions to create musical things
 //
 
 #include <stdio.h>
@@ -15,105 +23,153 @@
 #include "Event.h"
 #include "music.h"
 
-//  int main (int argc, char *argv[]) {
-//
-//     srand(time(NULL));
-//
-//     runSomeTests();
-//     FILE *output = initialiseFile();
-//
-//     int tracks = 0;
-//     int tempo = 60;
-//
-//     int numPlays = 0;
-//     printf("Enter number of notes or rests\n");
-//     scanf("%d", &numPlays);
-//
-//     int numEvents = numPlays * 2;
-//
-//     int range = 2;
-//     int root = MIDDLE_C;
-//     int scaleID = 0;
-//
-//     printf("Major: 0, minor: 1, harmonic minor: 2\n");
-//     scanf("%d", &scaleID);
-//
-//     scale allScales[NUM_SCALES] = SCALES;
-//     //    chord chords[NUM_CHORDS] = CHORDS;
-//
-//     // generate the random notes
-//
-//
-//     unsigned int stepChance = 0;
-//
-//     printf("Chance of stepwise motion (%%)?\n");
-//     scanf("%d", &stepChance);
-//
-//     if (stepChance > 100) {
-//         stepChance = 100;
-//     }
-//
-//     int *base = generateDegrees (SCALE_DEFAULT_NOTES, numPlays, stepChance);
-//     int *rhythms = generateRhythms (tempo, numPlays);
-//
-//     unsigned int restChance = 0;
-//
-//     printf("Chance of rest (%%)?\n");
-//     scanf("%d", &restChance);
-//
-//     if (restChance > 100) {
-//         restChance = 100;
-//     }
-//
-//     int *pitches = degreesToPitches (base, allScales[scaleID], SCALE_DEFAULT_NOTES,
-//                                      numPlays, root, range, 0);
-//     track trackOne = createTrack (tempo, numEvents);
-//     tracks++;
-//     writeNotes (trackOne, pitches, rhythms, numEvents, restChance);
-//
-//     pitches = degreesToPitches (base, allScales[scaleID], SCALE_DEFAULT_NOTES,
-//                                      numPlays, root, range, 2);
-//     track trackTwo = createTrack (tempo, numEvents);
-//     tracks++;
-//     writeNotes (trackTwo, pitches, rhythms, numEvents, restChance);
-//
-//     free(base);
-//     free(rhythms);
-//
-//     /*
-//     int voices = 4;
-//     track *poly = malloc (sizeof(struct _track) * voices);
-//     assert (poly != NULL);
-//     tracks += voices;
-//     i = 0;
-//     while (i < voices) {
-//         poly[i] = createTrack(tempo, numEvents);
-//         i++;
-//     }
-//
-//     i = 0;
-//     while (i < numPlays) {
-//         setChord(poly, voices, i*2, pitches[i], chords[rand()%NUM_CHORDS],
-//                  rhythms[rand() % NUM_RHYTHMS]);
-//         i++;
-//     }
-//     */
-//     midiHeader(tracks, tempo, output);
-//     printTrack(trackOne, output);
-//     printTrack(trackTwo, output);
-//     /*
-//     i = 0;
-//     while (i < voices) {
-//         printTrack (poly[i], output);
-//         i++;
-//     }
-//     free(poly);
-//     */
-//     fclose(output);
-//     return EXIT_SUCCESS;
-// }
+// Generate and write a monophonic melody with the given parameters
 
-// Write pitch and rhythm array to track
+void singleNoteMelody (FILE* output, songdata newsong) {
+
+    unsigned int tempo = newsong->tempo;
+    unsigned int numPlays = newsong->numPlays;
+    unsigned int stepChance = newsong->stepChance;
+    unsigned int restChance = newsong->restChance;
+    unsigned int root = newsong->root;
+    unsigned int range = newsong->range;
+    unsigned int scaleID = newsong->scaleID;
+    unsigned int isBoring = newsong->isBoring;
+
+    free(newsong);
+    newsong = NULL;
+
+    int *base = generateDegrees (SCALE_DEFAULT_NOTES, numPlays,
+        stepChance);
+    int *rhythms = generateRhythms (tempo, numPlays, isBoring);
+
+    scale allScales[NUM_SCALES] = SCALES;
+    int *pitches = degreesToPitches (base, allScales[scaleID],
+        SCALE_DEFAULT_NOTES, numPlays, root, range, 0);
+
+    int numEvents = numPlays * 2;
+    int tracks = 0;
+    track trackOne = createTrack (tempo, numEvents);
+    tracks++;
+    writeNotes (trackOne, pitches, rhythms, numEvents, restChance);
+
+    midiHeader(tracks, tempo, output);
+    printTrack(trackOne, output);
+
+    free(base);
+    base = NULL;
+    free(rhythms);
+    rhythms = NULL;
+}
+
+// Generate and write a melody and harmony with the given parameters
+
+void melodyWithHarmony (FILE* output, songdata newsong) {
+
+    unsigned int tempo = newsong->tempo;
+    unsigned int numPlays = newsong->numPlays;
+    unsigned int stepChance = newsong->stepChance;
+    unsigned int restChance = newsong->restChance;
+    unsigned int root = newsong->root;
+    unsigned int range = newsong->range;
+    unsigned int scaleID = newsong->scaleID;
+    unsigned int isBoring = newsong->isBoring;
+    int interval = newsong->harmony;
+
+    free(newsong);
+    newsong = NULL;
+
+    int *base = generateDegrees (SCALE_DEFAULT_NOTES, numPlays, stepChance);
+    int *rhythms = generateRhythms (tempo, numPlays, isBoring);
+
+    scale allScales[NUM_SCALES] = SCALES;
+    int *pitches = degreesToPitches (base, allScales[scaleID],
+        SCALE_DEFAULT_NOTES, numPlays, root, range, 0);
+
+    int numEvents = numPlays * 2;
+    int tracks = 0;
+    track trackOne = createTrack (tempo, numEvents);
+    tracks++;
+    writeNotes (trackOne, pitches, rhythms, numEvents, restChance);
+
+    pitches = degreesToPitches (base, allScales[scaleID],
+        SCALE_DEFAULT_NOTES, numPlays, root, range, interval);
+
+    track trackTwo = createTrack (tempo, numEvents);
+    tracks++;
+    writeNotes (trackTwo, pitches, rhythms, numEvents, restChance);
+
+    midiHeader(tracks, tempo, output);
+    printTrack(trackOne, output);
+    printTrack(trackTwo, output);
+
+    free(base);
+    base = NULL;
+    free(rhythms);
+    rhythms = NULL;
+}
+
+// Generate a random chord progression
+
+void chords (FILE* output, songdata newsong) {
+
+    unsigned int tempo = newsong->tempo;
+    unsigned int numPlays = newsong->numPlays;
+    unsigned int stepChance = newsong->stepChance;
+    unsigned int root = newsong->root;
+    unsigned int range = newsong->range;
+    unsigned int scaleID = newsong->scaleID;
+    unsigned int isBoring = newsong->isBoring;
+    int voices = newsong->voices;
+
+    free(newsong);
+    newsong = NULL;
+
+    int *base = generateDegrees (SCALE_DEFAULT_NOTES, numPlays, stepChance);
+    int *rhythms = generateRhythms (tempo, numPlays, isBoring);
+
+    scale allScales[NUM_SCALES] = SCALES;
+    int *pitches = degreesToPitches (base, allScales[scaleID],
+        SCALE_DEFAULT_NOTES, numPlays, root, range, 0);
+
+    int numEvents = numPlays * 2;
+    chord chords[NUM_CHORDS] = CHORDS;
+    int tracks = 0;
+
+
+    track *poly = malloc (sizeof(struct _track) * voices);
+    assert (poly != NULL);
+    tracks += voices;
+    int i = 0;
+    while (i < voices) {
+        poly[i] = createTrack(tempo, numEvents);
+        i++;
+    }
+
+    i = 0;
+    while (i < (int)numPlays) {
+        setChord(poly, voices, i*2, pitches[i], chords[rand()%NUM_CHORDS],
+                 rhythms[i]);
+        i++;
+    }
+
+    midiHeader(tracks, tempo, output);
+    i = 0;
+    while (i < voices) {
+        printTrack (poly[i], output);
+        i++;
+    }
+    free(pitches);
+    pitches = NULL;
+    free(base);
+    base = NULL;
+    free(rhythms);
+    rhythms = NULL;
+    free(poly);
+    poly = NULL;
+}
+
+// Write an array of pitches and rhythms into midi data
 
 void writeNotes (track t, int *pitches, int *rhythms, int numEvents, int restChance) {
     int i = 0;
@@ -133,8 +189,7 @@ void writeNotes (track t, int *pitches, int *rhythms, int numEvents, int restCha
     pitches = NULL;
 }
 
-// passing a scale instead of an ID is necessary
-// it allows for custom scales later on
+// Convert an array of degrees to midi pitches in a given scale
 
 int *degreesToPitches (int *degrees, scale tones, int width, int amount,
                        int root, int range, int interval) {
@@ -151,7 +206,8 @@ int *degreesToPitches (int *degrees, scale tones, int width, int amount,
     return pitches;
 }
 
-// Return an array of random rhythms
+// Return an array of random musical divisions of the tempo
+// If isBoring is true, rhythms will conform to a more listenable grid
 
 int *generateRhythms (int tempo, int amount, int isBoring) {
 
@@ -206,6 +262,8 @@ int *generateDegrees (int width, int amount, int stepChance) {
     }
     return degrees;
 }
+
+// A demo to demonstrate the capabilities of Event.c
 
 void demoOne (FILE *file) {
 

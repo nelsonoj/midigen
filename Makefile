@@ -1,4 +1,5 @@
 CC=gcc
+EXENAME=musicgen
 
 OS := $(shell gcc -dumpmachine)
 ifneq (, $(findstring linux, $(OS)))
@@ -9,18 +10,18 @@ else
 	ADDITIONAL_ERRS=-Wno-incompatible-pointer-types-discards-qualifiers
 endif
 
-CFLAGS=-g -Wall -Wcomments -Wextra -pedantic -Wmissing-prototypes -Wshadow -Wwrite-strings -Wno-unused-parameter -Wno-ignored-qualifiers $(ADDITIONAL_ERRS) -std=c99 -Werror
+CFLAGS=-Wall -Wcomments -Wextra -pedantic -Wmissing-prototypes -Wshadow -Wwrite-strings -Wno-unused-parameter -Wno-ignored-qualifiers $(ADDITIONAL_ERRS) -std=c99 -Werror
 
 # Targets
-all: musicgen
+all: $(EXENAME)
 
-musicgen: music.c interface.c Event.c
-	$(CC) $(CFLAGS) $(LDFLAGS) music.c interface.c Event.c -o musicgen
+$(EXENAME): main.c interface.c music.c Event.c
+	$(CC) $(CFLAGS) $(LDFLAGS) main.c interface.c music.c Event.c -o $(EXENAME)
 
 # Actions
 .PHONY: test
 test:
-	./musicgen
+	./$(EXENAME)
 
 .PHONY: clean
 clean:

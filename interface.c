@@ -1,13 +1,18 @@
 //
-//  user.c
+// Nelson Odins-Jones, z5122504, nelsonoj
 //
+//                    _|        _|  _|
+//    _|_|_|  _|_|          _|_|_|        _|_|_|    _|_|    _|_|_|
+//    _|    _|    _|  _|  _|    _|  _|  _|    _|  _|_|_|_|  _|    _|
+//    _|    _|    _|  _|  _|    _|  _|  _|    _|  _|        _|    _|
+//    _|    _|    _|  _|    _|_|_|  _|    _|_|_|    _|_|_|  _|    _|
+//                                            _|
+//                                          _|_|
 //
-//  Created by Nelson Odins-Jones on 23/05/2016.
+// interface.c: the second level of abstraction for my SOMETHING AWESOME
 //
-// TODO: modes (single, harmony, chords, demo)
-// TODO: clean up everything
-// TODO: put limits on everything DONE 27/5
-// TODO: add tame rhythm mode DONE 27/5
+// Abstraction of curses library functions into custom functions
+//
 
 #include <stdlib.h>
 #include <curses.h>
@@ -18,106 +23,23 @@
 
 #include "Event.h"
 #include "music.h"
-
-#define MAX_EVENTS 9999
-#define MAX_OCTAVE 9
-#define MAX_RANGE (HIGHEST_NOTE - OCTAVE*baseOctave) / OCTAVE
-
-#define MAX_FILENAME 14
-#define FILE_EXTENSION ".mid"
-#define FILE_EXTENSION_SIZE 4
-
-#define HEADER_HEIGHT 3
-#define QUIT 'q'
-
-// Modes
-#define NUM_MODES 3
-#define MODE_MONO 0
-#define MODE_HARM 1
-#define MODE_DEMO 2
-#define MODE_NAMES {"Generate a monophonic melody", \
-                    "Generate a melody with a harmony", \
-                    "Run the demo" }
-
-#define HARMONY_NAMES { "Seconds", "Thirds (classic)", "Fourths", \
-                        "Fifths", "Sixths", "Sevenths", "Octaves" }
-
-typedef struct _songData {
-        unsigned int tempo;
-        unsigned int numPlays;
-        unsigned int stepChance;
-        unsigned int restChance;
-        unsigned int isBoring;
-        unsigned int root;
-        unsigned int range;
-        unsigned int scaleID;
-}*songdata;
-
-static void welcome (int screenHeight, int screenWidth);
-static int getMode (WINDOW *header, WINDOW *menuWindow);
-static FILE *initialiseFile (WINDOW *header);
-static int isValidName (char *name);
-static int isValidChar (char c);
-
-static void initialiseCurses (void);
-static songdata getParameters (WINDOW* header, WINDOW *menuWindow);
-static void singleNoteMelody (FILE* output, songdata newsong);
-static void melodyWithHarmony (FILE* output, songdata newsong, int interval);
+#include "interface.h"
 
 static int getIntWithMenu (WINDOW* window, char **options, int numOptions);
 static int getIntWithInput (WINDOW *window, char *prompt, int min, int max);
 static void setHeading (WINDOW *header, char *message);
-static void farewell (WINDOW *header, int screenHeight, int screenWidth);
 
-int main (int argc, char *argv[]) {
+static int isValidName (char *name);
+static int isValidChar (char c);
 
-    srand(time(NULL));
+// Display the splash screen
 
-    initialiseCurses();
-    int screenWidth = 0;
-    int screenHeight = 0;
-    getmaxyx(stdscr, screenHeight, screenWidth);
+void welcome (int screenHeight, int screenWidth) {
 
-    welcome(screenHeight, screenWidth);
-
-    WINDOW *header = newwin(HEADER_HEIGHT, screenWidth, 0, 0);
-    wbkgd(header, COLOR_PAIR(1));
-
-    WINDOW *menuWindow = newwin(OCTAVE, screenWidth, HEADER_HEIGHT + 2, 0);
-    keypad(menuWindow, TRUE);
-
-    int mode = getMode(header, menuWindow);
-
-    FILE *output = initialiseFile(header);
-
-    if (mode == MODE_MONO) {
-        songdata newsong = getParameters(header, menuWindow);
-        singleNoteMelody (output, newsong);
-    } else if (mode == MODE_HARM) {
-        songdata newsong = getParameters(header, menuWindow);
-
-        setHeading (header, "What kind of harmony would you like?");
-        char *harmChoices[SCALE_DEFAULT_NOTES] = HARMONY_NAMES;
-        int interval = 1 + getIntWithMenu (menuWindow, harmChoices, SCALE_DEFAULT_NOTES);
-
-        melodyWithHarmony (output, newsong, interval);
-    } else if (mode == MODE_DEMO){
-        demoOne (output);
-    }
-
-    delwin(menuWindow);
-    farewell(header, screenHeight, screenWidth);
-    delwin(header);
-
-    endwin();
-
-    return EXIT_SUCCESS;
-}
-
-static void welcome (int screenHeight, int screenWidth) {
-
-    WINDOW *splash = newwin(screenHeight-8, screenWidth-8, 4, 4);
+    WINDOW *splash = newwin(screenHeight-SPLASH_PADDING,
+        screenWidth-SPLASH_PADDING, 4, 4);
     wbkgd(splash, COLOR_PAIR(1));
+
     // char *splashBanner =
     // "               o     |  o\n"
     // "     _  _  _       __|      __,  _   _  _\n"
@@ -136,28 +58,79 @@ static void welcome (int screenHeight, int screenWidth) {
     "                                         _|_|\n";
 
     wattron(splash, COLOR_PAIR(2));
-    mvwprintw(splash, (screenHeight-8)/2 - 3, 0, "%s", splashBanner);
+    mvwprintw(splash, (screenHeight-SPLASH_PADDING)/2 - 3, 0, "%s",
+              splashBanner);
     wattron(splash, COLOR_PAIR(1));
-    mvwprintw(splash, screenHeight-8-2, 2, "\tWelcome! Press any key to continue");
+    mvwprintw(splash, screenHeight-SPLASH_PADDING-2, 2,
+              "\tWelcome! Press any key to continue");
     wgetch(splash);
     delwin(splash);
     refresh();
 }
 
-static void farewell (WINDOW *header, int screenHeight, int screenWidth) {
+// Get a filename from the user and open a midi file with that name
+
+FILE *initialiseFile (WINDOW *header) {
+
+    char filename[MAX_FILENAME + FILE_EXTENSION_SIZE] = { 0 };
+    setHeading(header, "Enter file name: ");
+    echo();
+    wattron(header, COLOR_PAIR(2));
+    wgetstr(header, filename);
+    wattron(header, COLOR_PAIR(1));
+    noecho();
+
+    while (!isValidName(filename)) {
+        setHeading(header, "Invalid name! Please try again: ");
+        echo();
+        wattron(header, COLOR_PAIR(2));
+        wgetstr(header, filename);
+        wattron(header, COLOR_PAIR(1));
+        noecho();
+    }
+
+    strncat(filename, FILE_EXTENSION, FILE_EXTENSION_SIZE);
+
+    FILE *file;
+    file = fopen(filename, "wb");
+    assert ((file!=NULL) && "Cannot open file :(");
+
+    return file;
+}
+
+// Boot up the graphical system
+
+void initialiseCurses (void) {
+    initscr();              // start curses
+    cbreak();               // allow uncooked key input and also ctrl-c
+    noecho();               // stop the terminal from printing input
+    curs_set(0);            // make the cursor invisible
+    keypad(stdscr, TRUE);   // allow useful action keys like arrow keys
+    start_color();          // let there be colours!
+    init_pair(1, COLOR_YELLOW, COLOR_BLUE);
+    init_pair(2, COLOR_RED, COLOR_BLUE);
+}
+
+// Display a nice farewell message
+
+void farewell (WINDOW *header, int screenHeight, int screenWidth) {
 
     setHeading (header, "Your midi file has been fabricated. Enjoy!");
 
-    WINDOW *splash = newwin(screenHeight-8, screenWidth-8, 4, 4);
+    WINDOW *splash = newwin(screenHeight-SPLASH_PADDING,
+                            screenWidth-SPLASH_PADDING, 4, 4);
     wbkgd(splash, COLOR_PAIR(1));
 
-    mvwprintw(splash, screenHeight-8-2, 2, "\tThank you for using midigen. Press any key to exit...");
+    mvwprintw(splash, screenHeight-SPLASH_PADDING-2, 2,
+              "\tThank you for using midigen. Press any key to exit...");
     wgetch(splash);
     delwin(splash);
     refresh();
 }
 
-static int getMode (WINDOW *header, WINDOW *menuWindow) {
+// Find out what the user wants to do
+
+int getMode (WINDOW *header, WINDOW *menuWindow) {
 
     setHeading (header, "What do you want to do?");
     char *modeChoices[NUM_MODES] = MODE_NAMES;
@@ -166,98 +139,22 @@ static int getMode (WINDOW *header, WINDOW *menuWindow) {
     return mode;
 }
 
-static void singleNoteMelody (FILE* output, songdata newsong) {
+// Get all the user parameters and return them in one big struct
 
-    unsigned int tempo = newsong->tempo;
-    unsigned int numPlays = newsong->numPlays;
-    unsigned int stepChance = newsong->stepChance;
-    unsigned int restChance = newsong->restChance;
-    unsigned int root = newsong->root;
-    unsigned int range = newsong->range;
-    unsigned int scaleID = newsong->scaleID;
-    unsigned int isBoring = newsong->isBoring;
-
-    free(newsong);
-    newsong = NULL;
-
-    int *base = generateDegrees (SCALE_DEFAULT_NOTES, numPlays, stepChance);
-    int *rhythms = generateRhythms (tempo, numPlays, isBoring);
-
-    scale allScales[NUM_SCALES] = SCALES;
-    int *pitches = degreesToPitches (base, allScales[scaleID], SCALE_DEFAULT_NOTES,
-                                     numPlays, root, range, 0);
-
-    // mvprintw(15, 20, "tempo is %d, numPlays is %d and stepChance is %d", tempo, numPlays, stepChance);
-    // mvprintw(17, 20, "restChance is %d, scaleID is %d", restChance, scaleID);
-    // getch();
-
-    int numEvents = numPlays * 2;
-    int tracks = 0;
-    track trackOne = createTrack (tempo, numEvents);
-    tracks++;
-    writeNotes (trackOne, pitches, rhythms, numEvents, restChance);
-
-    midiHeader(tracks, tempo, output);
-    printTrack(trackOne, output);
-
-    free(base);
-    base = NULL;
-    free(rhythms);
-    rhythms = NULL;
-}
-
-static void melodyWithHarmony (FILE* output, songdata newsong, int interval) {
-
-    unsigned int tempo = newsong->tempo;
-    unsigned int numPlays = newsong->numPlays;
-    unsigned int stepChance = newsong->stepChance;
-    unsigned int restChance = newsong->restChance;
-    unsigned int root = newsong->root;
-    unsigned int range = newsong->range;
-    unsigned int scaleID = newsong->scaleID;
-    unsigned int isBoring = newsong->isBoring;
-
-    free(newsong);
-    newsong = NULL;
-
-    int *base = generateDegrees (SCALE_DEFAULT_NOTES, numPlays, stepChance);
-    int *rhythms = generateRhythms (tempo, numPlays, isBoring);
-
-    scale allScales[NUM_SCALES] = SCALES;
-    int *pitches = degreesToPitches (base, allScales[scaleID], SCALE_DEFAULT_NOTES,
-                                     numPlays, root, range, 0);
-
-    int numEvents = numPlays * 2;
-    int tracks = 0;
-    track trackOne = createTrack (tempo, numEvents);
-    tracks++;
-    writeNotes (trackOne, pitches, rhythms, numEvents, restChance);
-
-    pitches = degreesToPitches (base, allScales[scaleID], SCALE_DEFAULT_NOTES,
-                                numPlays, root, range, interval);
-
-    track trackTwo = createTrack (tempo, numEvents);
-    tracks++;
-    writeNotes (trackTwo, pitches, rhythms, numEvents, restChance);
-
-    midiHeader(tracks, tempo, output);
-    printTrack(trackOne, output);
-    printTrack(trackTwo, output);
-
-    free(base);
-    base = NULL;
-    free(rhythms);
-    rhythms = NULL;
-}
-
-static songdata getParameters (WINDOW* header, WINDOW *menuWindow) {
+songdata getParameters (WINDOW* header, WINDOW *menuWindow, int mode) {
 
     songdata newsong = malloc (sizeof(struct _songData));
 
-    newsong->tempo = 60; //getIntWithInput (header, "Enter the tempo: ", 0, 500);
-    newsong->numPlays = getIntWithInput (header, "Enter number of notes or rests: ", 1, MAX_EVENTS);
-    newsong->stepChance = getIntWithInput (header, "Enter chance of stepwise motion (%): ", 0, 100);
-    newsong->restChance = getIntWithInput (header, "Enter chance of rest (%): ", 0, 100);
+    newsong->tempo = DEFAULT_TEMPO;
+    newsong->numPlays = getIntWithInput (header,
+        "Enter number of notes or rests: ", 1, MAX_EVENTS);
+    newsong->stepChance = getIntWithInput (header,
+        "Enter chance of stepwise motion (%): ", 0, 100);
+    newsong->restChance = 0;
+    if (mode != MODE_CHOR) {
+        newsong->restChance = getIntWithInput (header,
+            "Enter chance of rest (%): ", 0, 100);
+    }
 
     char *rhythmChoices[2] = { "Avant Garde", "Boring"};
     setHeading(header, "How do you like your rhythms?");
@@ -267,14 +164,28 @@ static songdata getParameters (WINDOW* header, WINDOW *menuWindow) {
     setHeading(header, "Choose a root note");
     newsong->root = getIntWithMenu(menuWindow, rootChoices, OCTAVE);
 
-    unsigned int baseOctave = getIntWithInput (header, "How many octaves high should that be? ", 0, MAX_OCTAVE);
+    unsigned int baseOctave = getIntWithInput (header,
+        "How many octaves high should that be? ", 0, MAX_OCTAVE);
     newsong->root += baseOctave * OCTAVE;
 
     char *scaleChoices[NUM_SCALES] = SCALE_NAMES;
     setHeading(header, "Choose a scale");
     newsong->scaleID = getIntWithMenu(menuWindow, scaleChoices, NUM_SCALES);
 
-    newsong->range = getIntWithInput (header, "Enter range in octaves: ", 1, MAX_RANGE);
+    newsong->range = getIntWithInput (header,
+        "Enter range in octaves: ", 1, MAX_RANGE);
+
+    newsong->harmony = -1;
+    newsong->voices = -1;
+    if (mode == MODE_HARM) {
+        setHeading (header, "What kind of harmony would you like?");
+        char *harmChoices[SCALE_DEFAULT_NOTES] = HARMONY_NAMES;
+        newsong->harmony = 1 + getIntWithMenu (menuWindow, harmChoices,
+            SCALE_DEFAULT_NOTES);
+    } else if (mode == MODE_CHOR) {
+        newsong->voices = getIntWithInput (header,
+            "How many voices would you like? ", 1, MAX_VOICES);
+    }
 
     werase(header);
     werase(menuWindow);
@@ -283,16 +194,8 @@ static songdata getParameters (WINDOW* header, WINDOW *menuWindow) {
     return newsong;
 }
 
-static void initialiseCurses (void) {
-    initscr();              // start curses
-    cbreak();               // allow uncooked key input and also ctrl-c
-    noecho();               // stop the terminal from printing input
-    curs_set(0);            // make the cursor invisible
-    keypad(stdscr, TRUE);   // allow useful action keys like arrow keys
-    start_color();          // let there be colours
-    init_pair(1, COLOR_YELLOW, COLOR_BLUE);
-    init_pair(2, COLOR_RED, COLOR_BLUE);
-}
+// Display a list of selections from a given list of strings, and
+// return what the user chooses
 
 static int getIntWithMenu (WINDOW* window, char **options, int numOptions) {
 
@@ -350,41 +253,7 @@ static int getIntWithMenu (WINDOW* window, char **options, int numOptions) {
     return choice;
 }
 
-static void setHeading (WINDOW *header, char *message) {
-    werase(header);
-    mvwprintw(header, 1, 2, "%s", message);
-    wrefresh(header);
-}
-
-FILE *initialiseFile (WINDOW *header) {
-
-    char filename[MAX_FILENAME + FILE_EXTENSION_SIZE] = { 0 };
-    setHeading(header, "Enter file name: ");
-    echo();
-    wattron(header, COLOR_PAIR(2));
-    wgetstr(header, filename);
-    wattron(header, COLOR_PAIR(1));
-    noecho();
-
-    while (!isValidName(filename)) {
-        setHeading(header, "Invalid name! Please try again: ");
-        echo();
-        wattron(header, COLOR_PAIR(2));
-        wgetstr(header, filename);
-        wattron(header, COLOR_PAIR(1));
-        noecho();
-    }
-
-    strncat(filename, FILE_EXTENSION, FILE_EXTENSION_SIZE);
-
-    FILE *file;
-    file = fopen(filename, "wb");
-    assert ((file!=NULL) && "Cannot open file :(");
-
-    return file;
-}
-
-// TODO: limits
+// Ask the user the prompt, and return the integer of the text they input
 
 static int getIntWithInput (WINDOW *window, char *prompt, int min, int max) {
 
@@ -399,7 +268,9 @@ static int getIntWithInput (WINDOW *window, char *prompt, int min, int max) {
 
     while (x < min || x > max) {
         char errorMessage[60];
-        snprintf(errorMessage, 60, "This value must be between %d and %d. Please try again: ", min, max);
+        snprintf(errorMessage, 60,
+            "This value must be between %d and %d. Please try again: ",
+            min, max);
         setHeading(window, errorMessage);
         echo();
         wattron(window, COLOR_PAIR(2));
@@ -411,6 +282,16 @@ static int getIntWithInput (WINDOW *window, char *prompt, int min, int max) {
 
     return x;
 }
+
+// Set the text of a given window
+
+static void setHeading (WINDOW *header, char *message) {
+    werase(header);
+    mvwprintw(header, 1, 2, "%s", message);
+    wrefresh(header);
+}
+
+// See if a filename is valid (length is ok and contains valid characters)
 
 static int isValidName (char *name) {
 
@@ -424,6 +305,8 @@ static int isValidName (char *name) {
     }
     return isValid;
 }
+
+// See if a character is valid
 
 static int isValidChar (char c) {
 

@@ -1,9 +1,17 @@
 //
-//  Event.h
+// Nelson Odins-Jones, z5122504, nelsonoj
 //
+//                    _|        _|  _|
+//    _|_|_|  _|_|          _|_|_|        _|_|_|    _|_|    _|_|_|
+//    _|    _|    _|  _|  _|    _|  _|  _|    _|  _|_|_|_|  _|    _|
+//    _|    _|    _|  _|  _|    _|  _|  _|    _|  _|        _|    _|
+//    _|    _|    _|  _|    _|_|_|  _|    _|_|_|    _|_|_|  _|    _|
+//                                            _|
+//                                          _|_|
 //
-//  Created by Nelson Odins-Jones on 10/05/2016.
+// Event.h: the lowest level of abstraction for my SOMETHING AWESOME
 //
+// Do the nitty gritty byte writing to make a midi file
 //
 
 #ifndef Event_h
@@ -126,8 +134,11 @@ void midiHeader (int trackCount, int tempo, FILE* file);
 // Write an entire track to standard out, including all headers and events
 void printTrack (track t, FILE* file);
 
+/*
+ *  Misc
+ */
 
-
+// Unit test the static functions of Event.c
 void runSomeTests (void);
 
 #endif /* Event_h */
