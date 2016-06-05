@@ -17,7 +17,8 @@
 #ifndef interface_h
 #define interface_h
 
-#define MAX_EVENTS 9999
+#define MAX_EVENTS 999
+#define MAX_CHORDS 16
 #define MAX_VOICES 4
 #define MAX_OCTAVE 9
 #define MAX_RANGE (HIGHEST_NOTE - OCTAVE*baseOctave) / OCTAVE

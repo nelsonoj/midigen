@@ -146,8 +146,14 @@ songdata getParameters (WINDOW* header, WINDOW *menuWindow, int mode) {
     songdata newsong = malloc (sizeof(struct _songData));
 
     newsong->tempo = DEFAULT_TEMPO;
-    newsong->numPlays = getIntWithInput (header,
-        "Enter number of notes or rests: ", 1, MAX_EVENTS);
+    if (mode == MODE_CHOR) {
+        newsong->numPlays = getIntWithInput (header,
+            "Enter number of notes or rests: ", 1, MAX_CHORDS);
+    } else {
+        newsong->numPlays = getIntWithInput (header,
+            "Enter number of notes or rests: ", 1, MAX_EVENTS);
+    }
+
     newsong->stepChance = getIntWithInput (header,
         "Enter chance of stepwise motion (%): ", 0, 100);
     newsong->restChance = 0;

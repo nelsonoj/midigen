@@ -11,8 +11,8 @@
 //
 // main.c: the highest level of abstraction for my SOMETHING AWESOME
 //
-// Generate valid midi files with maths.
-// 
+// Generate valid midi files with C.
+//
 
 #include <stdlib.h>
 #include <curses.h>
